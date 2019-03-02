@@ -27,6 +27,8 @@
 /examples/R/\.Rhistory
 /examples/js/Infomap-worker.js
 /examples/js/Infomap.js
+/examples/csharp/bin
+/examples/csharp/obj
 .vscode
 .ipynb_checkpoints
 Infomap.dSym
