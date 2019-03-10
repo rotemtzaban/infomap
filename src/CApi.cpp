@@ -1,7 +1,9 @@
 #include "Infomap.h"
 
-namespace infomap {
-
+#ifdef NS_INFOMAP
+namespace infomap 
+{
+#endif
     Infomap *NewInfomap(const char *flags) { return new Infomap(flags); };
 
     void DestroyInfomap(Infomap *im) { im->~Infomap(); };
@@ -26,4 +28,6 @@ namespace infomap {
     unsigned int ModuleIndex(struct LeafIterator *it) { return it->moduleIndex(); }
 
     double Flow(struct LeafIterator *it) { return it->base()->data.flow; }
+#ifdef NS_INFOMAP
 }
+#endif

@@ -38,17 +38,6 @@ Infomap: $(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $@ $^
 	@echo "-- Link finished --"
 
-shared: CXXFLAGS += -fPIC
-shared: lib/infomap.so
-
-lib/infomap.so: CXXFLAGS += -fPIC
-lib/infomap.so: $(OBJECTS)
-	@echo "Linking object files to target $@..."
-	mkdir -p lib
-	$(CXX) $(LDFLAGS) -shared -o $@ $^
-	@echo "-- Link finished --"
-
-
 Infomap-formatter: $(INFORMATTER_OBJECTS)
 	@echo "Making Informatter..."
 	$(CXX) $(LDFLAGS) -o $@ $^
@@ -139,9 +128,6 @@ PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 PY3_HEADERS := $(HEADERS:src/%.h=$(PY3_BUILD_DIR)/src/%.h)
 PY3_SOURCES := $(SOURCES:src/%.cpp=$(PY3_BUILD_DIR)/src/%.cpp)
-CSHARP_BUILD_DIR = build/csharp
-CSHARP_HEADERS := $(HEADERS:src/%.h=$(CSHARP_BUILD_DIR)/src/%.h)
-CSHARP_SOURCES := $(SOURCES:src/%.cpp=$(CSHARP_BUILD_DIR)/src/%.cpp)
 
 .PHONY: python py-build
 
@@ -157,9 +143,6 @@ python3: py3-build Makefile
 	@true
 
 
-csharp: csharp-build shared Makefile
-	g++ $(CXXFLAGS) -fPIC -shared -o lib/infomap_wrap.so $(CSHARP_BUILD_DIR)/infomap_wrap.cpp -Llib -l:infomap.so -Wl,-rpath,.
-
 # Generate wrapper files from source and interface files
 py-build: $(PY_HEADERS) $(PY_SOURCES)
 	@mkdir -p $(PY_BUILD_DIR)
@@ -169,14 +152,7 @@ py-build: $(PY_HEADERS) $(PY_SOURCES)
 py3-build: $(PY3_HEADERS) $(PY3_SOURCES)
 	@mkdir -p $(PY3_BUILD_DIR)
 	@cp -a $(SWIG_FILES) $(PY3_BUILD_DIR)/
-	swig -c++ -python -py3 -outdir $(PY3_BUILD_DIR) -o $(PY3_BU*ILD_DIR)/infomap_wrap.cpp $(PY3_BUILD_DIR)/Infomap.i
-
-csharp-build: $(CSHARP_HEADERS) $(CSHARP_SOURCES)
-	@mkdir -p $(CSHARP_BUILD_DIR)
-	@cp -a $(SWIG_FILES) $(CSHARP_BUILD_DIR)/
-	swig -c++ -csharp -namespace Infomap -dllimport infomap_wrap -outdir $(CSHARP_BUILD_DIR) -o $(CSHARP_BUILD_DIR)/infomap_wrap.cpp $(CSHARP_BUILD_DIR)/Infomap.i
-	rm $(CSHARP_BUILD_DIR)/infomap.cs
-	dotnet new  classlib  --force -o $(CSHARP_BUILD_DIR) -n Infomap 
+	swig -c++ -python -py3 -outdir $(PY3_BUILD_DIR) -o $(PY3_BUILD_DIR)/infomap_wrap.cpp $(PY3_BUILD_DIR)/Infomap.i
 
 # Rule for $(PY_HEADERS) and $(PY_SOURCES)
 $(PY_BUILD_DIR)/src/%: src/%
@@ -184,10 +160,6 @@ $(PY_BUILD_DIR)/src/%: src/%
 	@cp -a $^ $@
 
 $(PY3_BUILD_DIR)/src/%: src/%
-	@mkdir -p $(dir $@)
-	@cp -a $^ $@
-
-$(CSHARP_BUILD_DIR)/src/%: src/%
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
@@ -217,6 +189,29 @@ $(R_BUILD_DIR)/src/%: src/%
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
+##################################################
+# CSharp module
+##################################################
+
+CSHARP_BUILD_DIR = build/csharp
+CSHARP_HEADERS := $(HEADERS:src/%.h=$(CSHARP_BUILD_DIR)/src/%.h)
+CSHARP_SOURCES := $(SOURCES:src/%.cpp=$(CSHARP_BUILD_DIR)/src/%.cpp)
+
+csharp: CXXFLAGS += -fPIC
+csharp: csharp-build $(OBJECTS)
+	$(CXX) $(CXXFLAGS) -shared -o $(CSHARP_BUILD_DIR)/infomap_wrap.so $(CSHARP_BUILD_DIR)/infomap_wrap.cpp $(OBJECTS)
+
+csharp-build: $(CSHARP_HEADERS) $(CSHARP_SOURCES)
+	@mkdir -p $(CSHARP_BUILD_DIR)
+	@cp -a $(SWIG_FILES) $(CSHARP_BUILD_DIR)/
+	swig -c++ -csharp -namespace Infomap -dllimport infomap_wrap -outdir $(CSHARP_BUILD_DIR) -outfile Infomap.cs -o $(CSHARP_BUILD_DIR)/infomap_wrap.cpp $(CSHARP_BUILD_DIR)/Infomap.i
+	dotnet new  classlib  --force -o $(CSHARP_BUILD_DIR) -n Infomap 
+	rm $(CSHARP_BUILD_DIR)/Class1.cs
+
+
+$(CSHARP_BUILD_DIR)/src/%: src/%
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
 
 ##################################################
 # General
